@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+    <h2>Skills</h2>
+    {% for category, skills in skills_by_category.items() %}
+        <div class="skill-category">
+            <h3>{{ category }}</h3>
+            <div class="skills-grid">
+                {% for skill in skills %}
+                    <div class="skill-card">
+                        <h4>{{ skill.name }}</h4>
+                        <p>{{ skill.description }}</p>
+                        <p>Experience: {{ skill.years_experience }} years</p>
+                        <p>Last Used: {{ skill.last_used.strftime('%Y-%m-%d') if skill.last_used else 'N/A' }}</p>
+                        <div class="proficiency-bar">
+                            <div class="progress" style="width: calc({{ skill.proficiency }} * 20%)"></div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+    <div class="card form-container">
+        <h2 class="gradient-text">Start New Discussion</h2>
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert {% if category %}alert-{{ category }}{% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <form method="POST" class="discussion-form">
+            <div class="form-group">
+                <label for="title">Title:</label>
+                <input type="text" id="title" name="title" required 
+                       class="form-control" minlength="5" maxlength="200"
+                       placeholder="What would you like to discuss?">
+            </div>
+            
+            <div class="form-group">
+                <label for="content">Content:</label>
+                <textarea id="content" name="content" required 
+                          class="form-control" rows="10" 
+                          placeholder="Share your thoughts, questions, or ideas..."></textarea>
+            </div>
+            
+            <div class="form-actions">
+                <button type="submit" class="btn">Post Discussion</button>
+                <a href="{{ url_for('discussions') }}" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+.form-container {
+    max-width: 800px;
+    margin: 2rem auto;
+    padding: 2rem;
+}
+
+.discussion-form .form-group {
+    margin-bottom: 1.5rem;
+}
+
+.discussion-form textarea {
+    min-height: 200px;
+    resize: vertical;
+}
+
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 2rem;
+}
+
+.form-control {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+    background: var(--card-bg);
+    color: var(--text-color);
+    font-family: inherit;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px var(--primary-color);
+}
+
+.btn-secondary {
+    background: var(--text-muted);
+}
+</style>
+{% endblock %}

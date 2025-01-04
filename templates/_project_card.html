@@ -1,0 +1,42 @@
+{% if project.image_url %}
+<img src="{{ project.image_url }}" alt="{{ project.title }}" class="project-image">
+{% endif %}
+
+<h3>{{ project.title }}</h3>
+<p class="project-description">{{ project.description }}</p>
+
+{% if project.technologies %}
+<div class="technologies">
+    {% for tech in project.technologies.split(',') %}
+    <span class="tech-tag">{{ tech.strip() }}</span>
+    {% endfor %}
+</div>
+{% endif %}
+
+<div class="project-links">
+    {% if project.github_url %}
+    <a href="{{ project.github_url }}" class="btn" target="_blank">
+        <i class="fab fa-github"></i> View Code
+    </a>
+    {% endif %}
+    
+    {% if project.project_url %}
+    <a href="{{ project.project_url }}" class="btn" target="_blank">
+        <i class="fas fa-external-link-alt"></i> Live Demo
+    </a>
+    {% endif %}
+    
+    {% if current_user.is_authenticated and project.student_id == current_user.id %}
+    <div class="project-actions">
+        <a href="{{ url_for('edit_project', id=project.id) }}" class="btn btn-edit">
+            <i class="fas fa-edit"></i>
+        </a>
+        <form method="POST" action="{{ url_for('delete_project', id=project.id) }}" 
+              class="delete-form" onsubmit="return confirm('Are you sure?');">
+            <button type="submit" class="btn btn-delete">
+                <i class="fas fa-trash"></i>
+            </button>
+        </form>
+    </div>
+    {% endif %}
+</div>

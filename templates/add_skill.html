@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+    <h2>Add New Skill</h2>
+    <form method="POST" class="form-container">
+        <div class="form-group">
+            <label for="name">Skill Name:</label>
+            <input type="text" id="name" name="name" required>
+        </div>
+        <div class="form-group">
+            <label for="category">Category:</label>
+            <select id="category" name="category" required>
+                <option value="Programming">Programming</option>
+                <option value="Design">Design</option>
+                <option value="Data Science">Data Science</option>
+                <option value="Soft Skills">Soft Skills</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="proficiency">Proficiency (1-5):</label>
+            <input type="number" id="proficiency" name="proficiency" min="1" max="5" required>
+        </div>
+        <div class="form-group">
+            <label for="years_experience">Years of Experience:</label>
+            <input type="number" id="years_experience" name="years_experience" step="0.1" required>
+        </div>
+        <div class="form-group">
+            <label for="description">Description:</label>
+            <textarea id="description" name="description" rows="4"></textarea>
+        </div>
+        <button type="submit" class="btn">Add Skill</button>
+    </form>
+</div>
+{% endblock %}

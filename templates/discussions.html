@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+    <div class="discussion-header">
+        <h2 class="gradient-text">Discussions</h2>
+        {% if current_user.is_authenticated %}
+            <a href="{{ url_for('create_discussion') }}" class="btn">
+                <i class="fas fa-plus"></i> Start New Discussion
+            </a>
+        {% endif %}
+    </div>
+
+    {% if discussions %}
+        <div class="discussions-filters">
+            <input type="text" id="searchDiscussions" class="search-input" placeholder="Search discussions...">
+            <select id="sortDiscussions" class="sort-select">
+                <option value="newest">Newest First</option>
+                <option value="oldest">Oldest First</option>
+                <option value="most-comments">Most Comments</option>
+            </select>
+        </div>
+
+        <div class="discussions-grid">
+            {% for discussion in discussions %}
+            <div class="discussion-card card" data-title="{{ discussion.title|lower }}">
+                <h3>
+                    <a href="{{ url_for('discussion_detail', id=discussion.id) }}">{{ discussion.title }}</a>
+                </h3>
+                <div class="discussion-meta">
+                    <span><i class="fas fa-user"></i> {{ discussion.author.name }}</span>
+                    <span><i class="fas fa-clock"></i> {{ discussion.created_at.strftime('%B %d, %Y') }}</span>
+                    <span><i class="fas fa-comments"></i> {{ discussion.comments|length }} comments</span>
+                </div>
+                <p class="discussion-preview">
+                    {{ discussion.content[:200] }}{% if discussion.content|length > 200 %}...{% endif %}
+                </p>
+                <div class="discussion-footer">
+                    <a href="{{ url_for('discussion_detail', id=discussion.id) }}" class="btn">Join Discussion</a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="no-discussions">
+            <p>No discussions yet. Be the first to start one!</p>
+        </div>
+    {% endif %}
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('searchDiscussions');
+    const sortSelect = document.getElementById('sortDiscussions');
+    const discussionsGrid = document.querySelector('.discussions-grid');
+
+    if (searchInput && sortSelect && discussionsGrid) {
+        // Search functionality
+        searchInput.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            const discussions = document.querySelectorAll('.discussion-card');
+            
+            discussions.forEach(discussion => {
+                const title = discussion.dataset.title;
+                discussion.style.display = title.includes(searchTerm) ? 'block' : 'none';
+            });
+        });
+
+        // Sorting functionality
+        sortSelect.addEventListener('change', function() {
+            const discussions = Array.from(document.querySelectorAll('.discussion-card'));
+            const sortBy = this.value;
+
+            discussions.sort((a, b) => {
+                if (sortBy === 'newest') {
+                    return new Date(b.querySelector('.fa-clock').parentNode.textContent) - 
+                           new Date(a.querySelector('.fa-clock').parentNode.textContent);
+                } else if (sortBy === 'oldest') {
+                    return new Date(a.querySelector('.fa-clock').parentNode.textContent) - 
+                           new Date(b.querySelector('.fa-clock').parentNode.textContent);
+                } else if (sortBy === 'most-comments') {
+                    const commentsA = parseInt(a.querySelector('.fa-comments').parentNode.textContent);
+                    const commentsB = parseInt(b.querySelector('.fa-comments').parentNode.textContent);
+                    return commentsB - commentsA;
+                }
+            });
+
+            discussions.forEach(discussion => discussionsGrid.appendChild(discussion));
+        });
+    }
+});
+</script>
+
+<style>
+.no-discussions {
+    text-align: center;
+    padding: 2rem;
+    background: var(--card-bg);
+    border-radius: 1rem;
+    margin-top: 2rem;
+}
+
+.discussions-grid {
+    display: grid;
+    gap: 1.5rem;
+    margin-top: 2rem;
+}
+
+@media (min-width: 768px) {
+    .discussions-grid {
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    }
+}
+</style>
+{% endblock %}

@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+    <div class="card form-container">
+        <h2 class="gradient-text">Upload File</h2>
+        
+        <form method="POST" enctype="multipart/form-data" class="upload-form">
+            <div class="form-group">
+                <label for="file">Select File:</label>
+                <input type="file" id="file" name="file" required class="form-control">
+                <small class="form-text">Allowed files: PNG, JPG, JPEG, PDF (Max size: 16MB)</small>
+            </div>
+            
+            <div class="form-group">
+                <label for="description">Description:</label>
+                <textarea id="description" name="description" class="form-control" 
+                          rows="3" placeholder="Add a description for your file..."></textarea>
+            </div>
+            
+            <div class="form-actions">
+                <button type="submit" class="btn">Upload File</button>
+                <a href="{{ url_for('shared_files') }}" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+.form-container {
+    max-width: 800px;
+    margin: 2rem auto;
+    padding: 2rem;
+}
+
+.upload-form .form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-text {
+    display: block;
+    margin-top: 0.5rem;
+    color: var(--text-muted);
+    font-size: 0.875rem;
+}
+
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 2rem;
+}
+
+.form-control {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+    background: var(--card-bg);
+    color: var(--text-color);
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px var(--primary-color);
+}
+
+.btn-secondary {
+    background: var(--text-muted);
+}
+</style>
+{% endblock %}

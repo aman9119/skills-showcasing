@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+    <div class="discussion-detail card">
+        <div class="discussion-header">
+            <h2 class="gradient-text">{{ discussion.title }}</h2>
+            <div class="discussion-meta">
+                <span><i class="fas fa-user"></i> {{ discussion.student.name }}</span>
+                <span><i class="fas fa-clock"></i> {{ discussion.created_at.strftime('%B %d, %Y %H:%M') }}</span>
+            </div>
+        </div>
+        <div class="discussion-content">
+            {{ discussion.content }}
+        </div>
+    </div>
+
+    <div class="comments-section card">
+        <h3>Comments ({{ comments|length }})</h3>
+        {% if current_user.is_authenticated %}
+            <form method="POST" action="{{ url_for('add_comment', discussion_id=discussion.id) }}" class="comment-form">
+                <div class="form-group">
+                    <textarea name="content" rows="3" required placeholder="Add your comment..."></textarea>
+                </div>
+                <button type="submit" class="btn">Post Comment</button>
+            </form>
+        {% endif %}
+
+        <div class="comments-list">
+            {% for comment in comments %}
+                <div class="comment-card">
+                    <div class="comment-header">
+                        <span class="comment-author">{{ comment.student.name }}</span>
+                        <span class="comment-date">{{ comment.created_at.strftime('%B %d, %Y %H:%M') }}</span>
+                    </div>
+                    <div class="comment-content">
+                        {{ comment.content }}
+                    </div>
+                </div>
+            {% else %}
+                <p class="no-comments">No comments yet. Be the first to comment!</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<style>
+.discussion-detail {
+    margin-bottom: 2rem;
+}
+
+.discussion-content {
+    margin: 1.5rem 0;
+    line-height: 1.8;
+    white-space: pre-wrap;
+}
+
+.comments-section {
+    margin-top: 2rem;
+}
+
+.comment-form {
+    margin: 1.5rem 0;
+}
+
+.no-comments {
+    text-align: center;
+    color: var(--text-muted);
+    margin: 2rem 0;
+}
+</style>
+{% endblock %}

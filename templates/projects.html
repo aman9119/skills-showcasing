@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+    <div class="projects-header">
+        <h2 class="gradient-text">Projects</h2>
+        {% if current_user.is_authenticated %}
+        <a href="{{ url_for('add_project') }}" class="btn">
+            <i class="fas fa-plus"></i> Add Project
+        </a>
+        {% endif %}
+    </div>
+
+    {% if featured_projects %}
+    <section class="featured-projects">
+        <h3>Featured Projects</h3>
+        <div class="projects-grid">
+            {% for project in featured_projects %}
+            <div class="project-card card" data-id="{{ project.id }}">
+                {% include '_project_card.html' %}
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+
+    {% if regular_projects %}
+    <section class="regular-projects">
+        <h3>Other Projects</h3>
+        <div class="projects-grid">
+            {% for project in regular_projects %}
+            <div class="project-card card">
+                {% include '_project_card.html' %}
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+
+    {% if not featured_projects and not regular_projects %}
+    <div class="no-projects card">
+        <p>No projects added yet.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

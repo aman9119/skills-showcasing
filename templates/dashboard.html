@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+    <h2>Dashboard</h2>
+    <div class="dashboard-content">
+        <div class="profile-section">
+            <h3>Profile</h3>
+            <p>Welcome, {{ current_user.name }}!</p>
+            <a href="{{ url_for('edit_profile') }}" class="btn">Edit Profile</a>
+        </div>
+        <div class="management-section">
+            <h3>Manage Content</h3>
+            <div class="button-group">
+                <a href="{{ url_for('skills') }}" class="btn">Manage Skills</a>
+                <a href="{{ url_for('projects') }}" class="btn">Manage Projects</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

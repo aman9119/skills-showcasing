@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block content %}
+<main>
+    <div class="hero">
+        <div class="container">
+            <div class="profile-header card">
+                {% if student.profile_image %}
+                    <img src="{{ student.profile_image }}" alt="{{ student.name }}" class="profile-image">
+                {% endif %}
+                <h1>{{ student.name }}</h1>
+                <p class="lead">{{ student.bio }}</p>
+                <div class="profile-links">
+                    {% if student.resume_url %}
+                        <a href="{{ student.resume_url }}" target="_blank" class="btn">
+                            <i class="fas fa-file-pdf"></i> View Resume
+                        </a>
+                    {% endif %}
+                    {% if student.github_url %}
+                        <a href="{{ student.github_url }}" target="_blank" class="btn">
+                            <i class="fab fa-github"></i> GitHub
+                        </a>
+                    {% endif %}
+                    {% if student.linkedin_url %}
+                        <a href="{{ student.linkedin_url }}" target="_blank" class="btn">
+                            <i class="fab fa-linkedin"></i> LinkedIn
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <section class="featured-projects">
+            <h2>Featured Projects</h2>
+            <div class="projects-grid">
+                {% for project in featured_projects %}
+                    <div class="project-card card">
+                        {% if project.image_url %}
+                            <img src="{{ project.image_url }}" alt="{{ project.title }}">
+                        {% endif %}
+                        <h3>{{ project.title }}</h3>
+                        <p>{{ project.description }}</p>
+                        <div class="technologies">
+                            {% for tech in project.technologies.split(',') %}
+                                <span class="tech-tag">{{ tech.strip() }}</span>
+                            {% endfor %}
+                        </div>
+                        <div class="project-links">
+                            {% if project.github_url %}
+                                <a href="{{ project.github_url }}" class="btn" target="_blank">View Code</a>
+                            {% endif %}
+                            {% if project.project_url %}
+                                <a href="{{ project.project_url }}" class="btn" target="_blank">Live Demo</a>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </section>
+    </div>
+</main>
+{% endblock %}

@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+    <h2 class="gradient-text">Add New Project</h2>
+    <form method="POST" enctype="multipart/form-data" class="form-container card">
+        <div class="form-group">
+            <label for="title">Project Title:</label>
+            <input type="text" id="title" name="title" required class="form-control">
+        </div>
+        
+        <div class="form-group">
+            <label for="description">Description:</label>
+            <textarea id="description" name="description" rows="4" required class="form-control"></textarea>
+        </div>
+        
+        <div class="form-group">
+            <label for="technologies">Technologies Used (comma-separated):</label>
+            <input type="text" id="technologies" name="technologies" class="form-control" 
+                   placeholder="e.g., Python, Flask, SQLAlchemy">
+        </div>
+        
+        <div class="form-group">
+            <label for="github_url">GitHub URL:</label>
+            <input type="url" id="github_url" name="github_url" class="form-control" 
+                   placeholder="https://github.com/username/project">
+        </div>
+        
+        <div class="form-group">
+            <label for="project_url">Live Project URL:</label>
+            <input type="url" id="project_url" name="project_url" class="form-control" 
+                   placeholder="https://your-project.com">
+        </div>
+        
+        <div class="form-group">
+            <label for="image">Project Image:</label>
+            <input type="file" id="image" name="image" accept="image/*" class="form-control">
+        </div>
+        
+        <div class="form-group">
+            <label>
+                <input type="checkbox" name="featured">
+                Featured Project
+            </label>
+        </div>
+        
+        <div class="form-actions">
+            <button type="submit" class="btn">Create Project</button>
+            <a href="{{ url_for('projects') }}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+
+<style>
+.form-container {
+    max-width: 800px;
+    margin: 2rem auto;
+    padding: 2rem;
+}
+
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 2rem;
+}
+
+.btn-secondary {
+    background: var(--text-muted);
+}
+
+.form-control {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid var(--border-color);
+    border-radius: 0.25rem;
+    background: var(--card-bg);
+    color: var(--text-color);
+}
+</style>
+{% endblock %}
