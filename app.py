@@ -18,30 +18,37 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 
 load_dotenv()
 
+# Create Flask app
 app = Flask(__name__)
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
-# Update database configuration
+# Update database URL configuration
 database_url = os.environ.get('DATABASE_URL')
 if database_url and 'postgres' in database_url:
-    # Use PostgreSQL in production (Render.com)
     if database_url.startswith('postgres://'):
         database_url = database_url.replace('postgres://', 'postgresql://', 1)
     print(f"Using PostgreSQL database: {database_url}")
 else:
-    # Use SQLite for local development
     database_url = 'sqlite:///portfolio.db'
     print("Using SQLite database for local development")
 
-# Update SQLAlchemy configuration
+# Set all configuration BEFORE accessing it
 app.config.update({
     'SECRET_KEY': os.environ.get('SECRET_KEY', 'default-secret-key'),
     'SQLALCHEMY_DATABASE_URI': database_url,
     'SQLALCHEMY_TRACK_MODIFICATIONS': False,
+    'UPLOAD_FOLDER': os.path.join(os.getcwd(), 'static', 'uploads'),  # Use absolute path
+    'MAX_CONTENT_LENGTH': 16 * 1024 * 1024,
+    'GITHUB_OAUTH_CLIENT_ID': os.environ.get('GITHUB_OAUTH_CLIENT_ID'),
+    'GITHUB_OAUTH_CLIENT_SECRET': os.environ.get('GITHUB_OAUTH_CLIENT_SECRET'),
+    'OAUTHLIB_INSECURE_TRANSPORT': True,
     'SQLALCHEMY_ENGINE_OPTIONS': {
-        'pool_pre_ping': True,  # Enable automatic reconnection
-    } if 'postgresql' in database_url else {}  # Only use pool options for PostgreSQL
+        'pool_pre_ping': True,
+    } if 'postgresql' in database_url else {}
 })
+
+# Create upload folder with absolute path
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 # Add database connection error handling
 @app.before_request
@@ -92,9 +99,6 @@ google_bp = make_google_blueprint(
 # Register blueprints after db initialization
 app.register_blueprint(github_bp, url_prefix='/login/github')
 app.register_blueprint(google_bp, url_prefix='/login/google')
-
-# Create upload folder if it doesn't exist
-os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
