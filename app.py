@@ -1015,14 +1015,13 @@ def oauth_error():
                          error_message=error or 'An authentication error occurred.')
 
 # Add this after all models are defined but before routes
-@app.before_first_request
-def create_tables():
-    db.create_all()
-
-# Modify the main block at the bottom
-if __name__ == '__main__':
+def init_app(app):
     with app.app_context():
         db.create_all()
         init_db()
+
+# Modify the main block at the bottom
+if __name__ == '__main__':
+    init_app(app)
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
