@@ -1007,24 +1007,22 @@ def delete_testimonial(id):
     
     return redirect(url_for('testimonials'))
 
-if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()  # Ensure all tables are created
-        init_db()
-        print("Database initialized successfully!")
-        
-        admin = Student.query.filter_by(username='admin').first()
-        if admin:
-            print(f"Admin user verified with ID: {admin.id}")
-        else:
-            print("Warning: Admin user not found!")
-
-    port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port, debug=True)
-
 @app.route('/login/error')
 def oauth_error():
     error = request.args.get('error')
     return render_template('error.html',
                          error_code='Auth Error',
                          error_message=error or 'An authentication error occurred.')
+
+# Add this after all models are defined but before routes
+@app.before_first_request
+def create_tables():
+    db.create_all()
+
+# Modify the main block at the bottom
+if __name__ == '__main__':
+    with app.app_context():
+        db.create_all()
+        init_db()
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port)

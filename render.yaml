@@ -2,8 +2,10 @@ services:
   - type: web
     name: portfolio-website
     env: python
-    buildCommand: bash build.sh
-    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT
+    buildCommand: pip install -r requirements.txt
+    startCommand: |
+      python init_db.py
+      gunicorn app:app --bind 0.0.0.0:$PORT
     envVars:
       - key: PYTHON_VERSION
         value: 3.9.0
