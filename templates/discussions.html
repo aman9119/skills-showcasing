@@ -1,114 +1,183 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="container">
-    <div class="discussion-header">
-        <h2 class="gradient-text">Discussions</h2>
-        {% if current_user.is_authenticated %}
-            <a href="{{ url_for('create_discussion') }}" class="btn">
-                <i class="fas fa-plus"></i> Start New Discussion
-            </a>
-        {% endif %}
-    </div>
+<div class="discussions-wrapper">
+    <div class="discussions-container">
+        <header class="page-header">
+            <div class="header-content">
+                <h1 class="gradient-heading">Community Discussions</h1>
+                <p class="header-subtitle">Join the conversation and share your thoughts</p>
+            </div>
+            {% if current_user.is_authenticated %}
+            <div class="header-actions">
+                <button class="btn-create" onclick="window.location.href='{{ url_for('create_discussion') }}'">
+                    <i class="fas fa-plus-circle"></i>
+                    <span>New Discussion</span>
+                </button>
+            </div>
+            {% endif %}
+        </header>
 
-    {% if discussions %}
-        <div class="discussions-filters">
-            <input type="text" id="searchDiscussions" class="search-input" placeholder="Search discussions...">
-            <select id="sortDiscussions" class="sort-select">
-                <option value="newest">Newest First</option>
-                <option value="oldest">Oldest First</option>
-                <option value="most-comments">Most Comments</option>
-            </select>
+        <div class="filters-section">
+            <div class="search-bar">
+                <i class="fas fa-search search-icon"></i>
+                <input type="text" class="search-input" placeholder="Search discussions...">
+            </div>
+            <div class="filter-options">
+                <select class="filter-select">
+                    <option value="all">All Categories</option>
+                    <option value="technical">Technical</option>
+                    <option value="career">Career</option>
+                    <option value="general">General</option>
+                </select>
+                <select class="sort-select">
+                    <option value="recent">Most Recent</option>
+                    <option value="popular">Most Popular</option>
+                    <option value="commented">Most Commented</option>
+                </select>
+            </div>
         </div>
 
         <div class="discussions-grid">
             {% for discussion in discussions %}
-            <div class="discussion-card card" data-title="{{ discussion.title|lower }}">
-                <h3>
-                    <a href="{{ url_for('discussion_detail', id=discussion.id) }}">{{ discussion.title }}</a>
-                </h3>
-                <div class="discussion-meta">
-                    <span><i class="fas fa-user"></i> {{ discussion.author.name }}</span>
-                    <span><i class="fas fa-clock"></i> {{ discussion.created_at.strftime('%B %d, %Y') }}</span>
-                    <span><i class="fas fa-comments"></i> {{ discussion.comments|length }} comments</span>
+            <article class="discussion-card">
+                <div class="card-header">
+                    <div class="author-info">
+                        <div class="avatar">
+                            {% if discussion.author.profile_image %}
+                            <img src="{{ discussion.author.profile_image }}" alt="Avatar">
+                            {% else %}
+                            <div class="avatar-placeholder">{{ discussion.author.name[0] }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="post-info">
+                            <h3 class="post-title">
+                                <a href="{{ url_for('discussion_detail', id=discussion.id) }}">{{ discussion.title }}</a>
+                            </h3>
+                            <div class="post-meta">
+                                <span class="author-name">{{ discussion.author.name }}</span>
+                                <span class="post-date">{{ discussion.created_at.strftime('%B %d, %Y') }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="engagement-stats">
+                        <span class="stat"><i class="fas fa-comments"></i> {{ discussion.comments|length }}</span>
+                        <span class="stat"><i class="fas fa-eye"></i> {{ discussion.views|default(0) }}</span>
+                    </div>
                 </div>
-                <p class="discussion-preview">
-                    {{ discussion.content[:200] }}{% if discussion.content|length > 200 %}...{% endif %}
-                </p>
-                <div class="discussion-footer">
-                    <a href="{{ url_for('discussion_detail', id=discussion.id) }}" class="btn">Join Discussion</a>
+                <div class="card-content">
+                    <p class="preview-text">{{ discussion.content[:200] }}{% if discussion.content|length > 200 %}...{% endif %}</p>
                 </div>
-            </div>
+                <div class="card-footer">
+                    <div class="tags">
+                        <span class="tag">{{ discussion.category|default('General') }}</span>
+                    </div>
+                    <button class="btn-read-more" onclick="window.location.href='{{ url_for('discussion_detail', id=discussion.id) }}'">
+                        Read More <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
+            </article>
             {% endfor %}
         </div>
-    {% else %}
-        <div class="no-discussions">
-            <p>No discussions yet. Be the first to start one!</p>
-        </div>
-    {% endif %}
+    </div>
 </div>
+
+<style>
+.discussions-wrapper {
+    padding: var(--section-spacing) 0;
+    background: var(--background-color);
+}
+
+.discussions-container {
+    max-width: var(--container-width);
+    margin: 0 auto;
+    padding: 0 var(--spacing-md);
+}
+
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-xl);
+    padding-bottom: var(--spacing-md);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.gradient-heading {
+    font-size: 2.5rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 0.5rem;
+}
+
+.header-subtitle {
+    color: var(--text-muted);
+    font-size: 1.1rem;
+}
+
+.btn-create {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    background: var(--accent-color);
+    color: white;
+    border: none;
+    border-radius: var(--radius-md);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-create:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.filters-section {
+    display: flex;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-xl);
+    flex-wrap: wrap;
+}
+
+/* Add more styles here... */
+</style>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const searchInput = document.getElementById('searchDiscussions');
-    const sortSelect = document.getElementById('sortDiscussions');
-    const discussionsGrid = document.querySelector('.discussions-grid');
+    const searchInput = document.querySelector('.search-input');
+    const filterSelect = document.querySelector('.filter-select');
+    const sortSelect = document.querySelector('.sort-select');
+    
+    // Search functionality
+    searchInput.addEventListener('input', debounce(function(e) {
+        // Implement search logic
+    }, 300));
 
-    if (searchInput && sortSelect && discussionsGrid) {
-        // Search functionality
-        searchInput.addEventListener('input', function() {
-            const searchTerm = this.value.toLowerCase();
-            const discussions = document.querySelectorAll('.discussion-card');
-            
-            discussions.forEach(discussion => {
-                const title = discussion.dataset.title;
-                discussion.style.display = title.includes(searchTerm) ? 'block' : 'none';
-            });
-        });
+    // Filter functionality
+    filterSelect.addEventListener('change', function(e) {
+        // Implement filter logic
+    });
 
-        // Sorting functionality
-        sortSelect.addEventListener('change', function() {
-            const discussions = Array.from(document.querySelectorAll('.discussion-card'));
-            const sortBy = this.value;
-
-            discussions.sort((a, b) => {
-                if (sortBy === 'newest') {
-                    return new Date(b.querySelector('.fa-clock').parentNode.textContent) - 
-                           new Date(a.querySelector('.fa-clock').parentNode.textContent);
-                } else if (sortBy === 'oldest') {
-                    return new Date(a.querySelector('.fa-clock').parentNode.textContent) - 
-                           new Date(b.querySelector('.fa-clock').parentNode.textContent);
-                } else if (sortBy === 'most-comments') {
-                    const commentsA = parseInt(a.querySelector('.fa-comments').parentNode.textContent);
-                    const commentsB = parseInt(b.querySelector('.fa-comments').parentNode.textContent);
-                    return commentsB - commentsA;
-                }
-            });
-
-            discussions.forEach(discussion => discussionsGrid.appendChild(discussion));
-        });
-    }
+    // Sort functionality
+    sortSelect.addEventListener('change', function(e) {
+        // Implement sort logic
+    });
 });
+
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
 </script>
-
-<style>
-.no-discussions {
-    text-align: center;
-    padding: 2rem;
-    background: var(--card-bg);
-    border-radius: 1rem;
-    margin-top: 2rem;
-}
-
-.discussions-grid {
-    display: grid;
-    gap: 1.5rem;
-    margin-top: 2rem;
-}
-
-@media (min-width: 768px) {
-    .discussions-grid {
-        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    }
-}
-</style>
 {% endblock %}

@@ -1,10 +1,12 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="container">
+<div class="auth-wrapper">
     <div class="auth-container">
-        <h2>Create Your Portfolio</h2>
-        <p class="auth-subtitle">Get started by creating your account</p>
-        
+        <header class="auth-header">
+            <h2 class="gradient-heading">Create Account</h2>
+            <p class="auth-subtitle">Join our community of developers</p>
+        </header>
+
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
@@ -15,31 +17,159 @@
             {% endif %}
         {% endwith %}
 
-        <form method="POST" action="{{ url_for('signup') }}" class="auth-form">
-            <div class="form-group">
-                <label for="username">Username:</label>
-                <input type="text" id="username" name="username" required minlength="3" maxlength="80">
+        <div class="social-signup">
+            <div class="social-buttons">
+                <a href="{{ url_for('github_login') }}" class="social-btn github">
+                    <i class="fab fa-github"></i>
+                    <span>Continue with GitHub</span>
+                </a>
+                <a href="{{ url_for('google.login') }}" class="social-btn google">
+                    <i class="fab fa-google"></i>
+                    <span>Continue with Google</span>
+                </a>
             </div>
+            <div class="divider"><span>or sign up with email</span></div>
+        </div>
+
+        <form method="POST" action="{{ url_for('signup') }}" class="signup-form">
             <div class="form-group">
-                <label for="name">Full Name:</label>
-                <input type="text" id="name" name="name" required minlength="2" maxlength="100">
+                <label for="username">Username</label>
+                <div class="input-group">
+                    <span class="input-icon"><i class="fas fa-user"></i></span>
+                    <input type="text" id="username" name="username" required 
+                           minlength="3" pattern="[a-zA-Z0-9_-]+" 
+                           title="Username can only contain letters, numbers, underscores and hyphens">
+                    <span class="validation-status"></span>
+                </div>
             </div>
+
             <div class="form-group">
-                <label for="email">Email:</label>
-                <input type="email" id="email" name="email" required>
+                <label for="name">Full Name</label>
+                <div class="input-group">
+                    <span class="input-icon"><i class="fas fa-id-card"></i></span>
+                    <input type="text" id="name" name="name" required>
+                </div>
             </div>
+
             <div class="form-group">
-                <label for="password">Password:</label>
-                <input type="password" id="password" name="password" required minlength="6">
-                <small class="form-text">Minimum 6 characters</small>
+                <label for="email">Email Address</label>
+                <div class="input-group">
+                    <span class="input-icon"><i class="fas fa-envelope"></i></span>
+                    <input type="email" id="email" name="email" required>
+                    <span class="validation-status"></span>
+                </div>
             </div>
+
             <div class="form-group">
-                <label for="confirm_password">Confirm Password:</label>
-                <input type="password" id="confirm_password" name="confirm_password" required minlength="6">
+                <label for="password">Password</label>
+                <div class="input-group">
+                    <span class="input-icon"><i class="fas fa-lock"></i></span>
+                    <input type="password" id="password" name="password" required
+                           minlength="6" pattern="(?=.*\d)(?=.*[a-z]).*">
+                    <span class="password-toggle" onclick="togglePassword('password')">
+                        <i class="fas fa-eye"></i>
+                    </span>
+                </div>
+                <div class="password-strength">
+                    <div class="strength-bar"></div>
+                    <span class="strength-text"></span>
+                </div>
             </div>
-            <button type="submit" class="btn btn-primary w-100">Create Account</button>
+
+            <div class="form-group">
+                <label for="confirm_password">Confirm Password</label>
+                <div class="input-group">
+                    <span class="input-icon"><i class="fas fa-lock"></i></span>
+                    <input type="password" id="confirm_password" name="confirm_password" required>
+                    <span class="validation-status"></span>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-submit">Create Account</button>
         </form>
-        <p class="auth-link">Already have an account? <a href="{{ url_for('login') }}">Login here</a></p>
+
+        <p class="auth-link">Already have an account? <a href="{{ url_for('login') }}">Sign in</a></p>
     </div>
 </div>
+
+<style>
+.auth-wrapper {
+    min-height: calc(100vh - var(--nav-height));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    background: linear-gradient(135deg, 
+        var(--gradient-start) 0%, 
+        var(--gradient-end) 100%);
+}
+
+.auth-container {
+    width: 100%;
+    max-width: 480px;
+    background: var(--card-bg);
+    padding: 2.5rem;
+    border-radius: var(--card-radius);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+/* Add more styles... */
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('.signup-form');
+    const password = document.getElementById('password');
+    const confirmPassword = document.getElementById('confirm_password');
+    const strengthBar = document.querySelector('.strength-bar');
+    const strengthText = document.querySelector('.strength-text');
+
+    // Password strength checker
+    password.addEventListener('input', function() {
+        const strength = checkPasswordStrength(this.value);
+        updateStrengthIndicator(strength);
+    });
+
+    // Validate matching passwords
+    confirmPassword.addEventListener('input', function() {
+        if (this.value === password.value) {
+            this.parentElement.classList.remove('error');
+            this.parentElement.classList.add('valid');
+        } else {
+            this.parentElement.classList.remove('valid');
+            this.parentElement.classList.add('error');
+        }
+    });
+
+    function checkPasswordStrength(password) {
+        let strength = 0;
+        if (password.length >= 8) strength += 1;
+        if (password.match(/[a-z]/) && password.match(/[A-Z]/)) strength += 1;
+        if (password.match(/\d/)) strength += 1;
+        if (password.match(/[^a-zA-Z\d]/)) strength += 1;
+        return strength;
+    }
+
+    function updateStrengthIndicator(strength) {
+        const percent = (strength / 4) * 100;
+        strengthBar.style.width = `${percent}%`;
+        
+        switch(strength) {
+            case 0: strengthText.textContent = 'Weak'; break;
+            case 1: strengthText.textContent = 'Fair'; break;
+            case 2: strengthText.textContent = 'Good'; break;
+            case 3: strengthText.textContent = 'Strong'; break;
+            case 4: strengthText.textContent = 'Very Strong'; break;
+        }
+    }
+});
+
+function togglePassword(inputId) {
+    const input = document.getElementById(inputId);
+    const icon = input.parentElement.querySelector('.password-toggle i');
+    input.type = input.type === 'password' ? 'text' : 'password';
+    icon.classList.toggle('fa-eye');
+    icon.classList.toggle('fa-eye-slash');
+}
+</script>
 {% endblock %}

@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="experience-wrapper">
+    <div class="experience-container">
+        <header class="page-header">
+            <div class="header-content">
+                <h1 class="gradient-heading">Work Experience</h1>
+                <p class="header-subtitle">My professional journey and accomplishments</p>
+            </div>
+            {% if current_user.is_authenticated %}
+            <div class="header-actions">
+                <button class="btn-create" onclick="window.location.href='{{ url_for('add_experience') }}'">
+                    <i class="fas fa-plus-circle"></i>
+                    <span>Add Experience</span>
+                </button>
+            </div>
+            {% endif %}
+        </header>
+
+        <div class="timeline">
+            {% for exp in experiences %}
+            <div class="timeline-item" data-aos="fade-up">
+                <div class="timeline-marker"></div>
+                <div class="timeline-content">
+                    <div class="experience-card">
+                        <div class="company-logo">
+                            {% if exp.company_logo %}
+                            <img src="{{ exp.company_logo }}" alt="{{ exp.company_name }}">
+                            {% else %}
+                            <i class="fas fa-building"></i>
+                            {% endif %}
+                        </div>
+                        <div class="experience-details">
+                            <h3 class="position">{{ exp.position }}</h3>
+                            <h4 class="company">{{ exp.company_name }}</h4>
+                            <div class="duration">
+                                <i class="fas fa-calendar"></i>
+                                <span>{{ exp.start_date.strftime('%B %Y') }} - 
+                                    {% if exp.current %}
+                                        Present
+                                    {% else %}
+                                        {{ exp.end_date.strftime('%B %Y') }}
+                                    {% endif %}
+                                </span>
+                            </div>
+                            <div class="location">
+                                <i class="fas fa-map-marker-alt"></i>
+                                <span>{{ exp.location }}</span>
+                            </div>
+                            <div class="responsibilities">
+                                {{ exp.description | safe }}
+                            </div>
+                            <div class="tech-stack">
+                                {% for tech in exp.technologies %}
+                                <span class="tech-tag">{{ tech }}</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<style>
+.timeline {
+    position: relative;
+    padding: 2rem 0;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 2px;
+    height: 100%;
+    background: linear-gradient(to bottom, var(--gradient-start), var(--gradient-end));
+}
+
+.timeline-item {
+    position: relative;
+    padding-left: 3rem;
+    margin-bottom: 3rem;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -6px;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--accent-color);
+    border: 2px solid var(--background-color);
+}
+
+/* Add more styles... */
+</style>
+{% endblock %}

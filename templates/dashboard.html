@@ -1,20 +1,202 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="container">
-    <h2>Dashboard</h2>
-    <div class="dashboard-content">
-        <div class="profile-section">
-            <h3>Profile</h3>
-            <p>Welcome, {{ current_user.name }}!</p>
-            <a href="{{ url_for('edit_profile') }}" class="btn">Edit Profile</a>
-        </div>
-        <div class="management-section">
-            <h3>Manage Content</h3>
-            <div class="button-group">
-                <a href="{{ url_for('skills') }}" class="btn">Manage Skills</a>
-                <a href="{{ url_for('projects') }}" class="btn">Manage Projects</a>
+<div class="dashboard-wrapper">
+    <div class="dashboard-container">
+        <header class="dashboard-header">
+            <div class="header-content">
+                <h1 class="gradient-heading">Dashboard</h1>
+                <p class="header-subtitle">Manage your portfolio and track your progress</p>
+            </div>
+            <div class="profile-summary">
+                <div class="profile-image">
+                    {% if current_user.profile_image %}
+                    <img src="{{ current_user.profile_image }}" alt="Profile">
+                    {% else %}
+                    <div class="profile-placeholder">{{ current_user.name[0] }}</div>
+                    {% endif %}
+                </div>
+                <div class="profile-info">
+                    <h2>{{ current_user.name }}</h2>
+                    <p>{{ current_user.bio or 'No bio added yet' }}</p>
+                </div>
+            </div>
+        </header>
+
+        <div class="dashboard-grid">
+            <!-- Quick Actions Card -->
+            <div class="dashboard-card actions-card">
+                <h3><i class="fas fa-bolt"></i> Quick Actions</h3>
+                <div class="quick-actions">
+                    <a href="{{ url_for('add_project') }}" class="action-button">
+                        <i class="fas fa-plus-circle"></i>
+                        <span>New Project</span>
+                    </a>
+                    <a href="{{ url_for('add_skill') }}" class="action-button">
+                        <i class="fas fa-code"></i>
+                        <span>Add Skill</span>
+                    </a>
+                    <a href="{{ url_for('edit_profile') }}" class="action-button">
+                        <i class="fas fa-user-edit"></i>
+                        <span>Edit Profile</span>
+                    </a>
+                    <a href="{{ url_for('create_discussion') }}" class="action-button">
+                        <i class="fas fa-comments"></i>
+                        <span>Start Discussion</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Stats Card -->
+            <div class="dashboard-card stats-card">
+                <h3><i class="fas fa-chart-pie"></i> Overview</h3>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <span class="stat-value">{{ current_user.projects|length }}</span>
+                        <span class="stat-label">Projects</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value">{{ current_user.skills|length }}</span>
+                        <span class="stat-label">Skills</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value">{{ current_user.discussions|length }}</span>
+                        <span class="stat-label">Discussions</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value">{{ current_user.comments|length }}</span>
+                        <span class="stat-label">Comments</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="dashboard-card activity-card">
+                <h3><i class="fas fa-history"></i> Recent Activity</h3>
+                <div class="activity-list">
+                    {% for activity in recent_activities %}
+                    <div class="activity-item">
+                        <div class="activity-icon">
+                            <i class="fas {{ activity.icon }}"></i>
+                        </div>
+                        <div class="activity-content">
+                            <p>{{ activity.description }}</p>
+                            <span class="activity-time">{{ activity.time.strftime('%B %d, %Y') }}</span>
+                        </div>
+                    </div>
+                    {% else %}
+                    <p class="no-activity">No recent activity</p>
+                    {% endfor %}
+                </div>
             </div>
         </div>
     </div>
 </div>
+
+<style>
+.dashboard-wrapper {
+    padding: var(--section-spacing) 0;
+    background: var(--background-color);
+}
+
+.dashboard-container {
+    max-width: var(--container-width);
+    margin: 0 auto;
+    padding: 0 var(--spacing-md);
+}
+
+.dashboard-header {
+    background: var(--card-bg);
+    border-radius: var(--card-radius);
+    padding: 2rem;
+    margin-bottom: 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.profile-summary {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.profile-image {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 3px solid var(--accent-color);
+}
+
+.profile-placeholder {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 2rem;
+    font-weight: bold;
+}
+
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+}
+
+.dashboard-card {
+    background: var(--card-bg);
+    border-radius: var(--card-radius);
+    padding: 1.5rem;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.dashboard-card h3 {
+    color: var(--text-color);
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.dashboard-card h3 i {
+    color: var(--accent-color);
+}
+
+.quick-actions {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 1rem;
+}
+
+.action-button {
+    background: var(--background-color);
+    padding: 1rem;
+    border-radius: var(--card-radius);
+    text-decoration: none;
+    color: var(--text-color);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.3s ease;
+}
+
+.action-button:hover {
+    transform: translateY(-2px);
+    background: var(--accent-color);
+    color: white;
+}
+
+/* Add more styles for stats and activity cards */
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add any dashboard-specific JavaScript here
+});
+</script>
 {% endblock %}

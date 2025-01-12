@@ -1,24 +1,183 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="container">
-    <h2>Skills</h2>
-    {% for category, skills in skills_by_category.items() %}
-        <div class="skill-category">
-            <h3>{{ category }}</h3>
-            <div class="skills-grid">
-                {% for skill in skills %}
-                    <div class="skill-card">
-                        <h4>{{ skill.name }}</h4>
-                        <p>{{ skill.description }}</p>
-                        <p>Experience: {{ skill.years_experience }} years</p>
-                        <p>Last Used: {{ skill.last_used.strftime('%Y-%m-%d') if skill.last_used else 'N/A' }}</p>
-                        <div class="proficiency-bar">
-                            <div class="progress" style="width: calc({{ skill.proficiency }} * 20%)"></div>
+<div class="skills-wrapper">
+    <div class="skills-container">
+        <header class="page-header">
+            <div class="header-content">
+                <h1 class="gradient-heading">Technical Skills</h1>
+                <p class="header-subtitle">A comprehensive overview of my technical expertise and proficiency levels</p>
+            </div>
+            {% if current_user.is_authenticated %}
+            <div class="header-actions">
+                <button class="btn-create" onclick="window.location.href='{{ url_for('add_skill') }}'">
+                    <i class="fas fa-plus-circle"></i>
+                    <span>Add Skill</span>
+                </button>
+            </div>
+            {% endif %}
+        </header>
+
+        <div class="skills-grid">
+            {% for category, skills in skills_by_category.items() %}
+            <div class="skill-category">
+                <h2 class="category-title">
+                    <i class="fas {{ category_icons[category] | default('fa-code') }}"></i>
+                    {{ category }}
+                </h2>
+                <div class="skills-list">
+                    {% for skill in skills %}
+                    <div class="skill-card" data-aos="fade-up">
+                        <div class="skill-header">
+                            <h3 class="skill-name">{{ skill.name }}</h3>
+                            <span class="experience-badge">{{ skill.years_experience }} years</span>
+                        </div>
+                        <div class="skill-content">
+                            <div class="proficiency-bar">
+                                <div class="progress" style="width: {{ skill.proficiency * 20 }}%">
+                                    <span class="proficiency-label">{{ skill.proficiency }}/5</span>
+                                </div>
+                            </div>
+                            {% if skill.description %}
+                            <p class="skill-description">{{ skill.description }}</p>
+                            {% endif %}
                         </div>
                     </div>
-                {% endfor %}
+                    {% endfor %}
+                </div>
             </div>
+            {% endfor %}
         </div>
-    {% endfor %}
+    </div>
 </div>
+
+<style>
+.skills-wrapper {
+    padding: var(--section-spacing) 0;
+    background: var(--background-color);
+}
+
+.skills-container {
+    max-width: var(--container-width);
+    margin: 0 auto;
+    padding: 0 var(--spacing-md);
+}
+
+.skills-grid {
+    display: grid;
+    gap: 3rem;
+    margin-top: 2rem;
+}
+
+.skill-category {
+    background: var(--card-bg);
+    border-radius: var(--card-radius);
+    padding: 2rem;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.category-title {
+    font-size: 1.5rem;
+    color: var(--text-color);
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.category-title i {
+    color: var(--accent-color);
+}
+
+.skills-list {
+    display: grid;
+    gap: 1.5rem;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+}
+
+.skill-card {
+    background: var(--background-color);
+    border-radius: var(--card-radius);
+    padding: 1.5rem;
+    transition: transform 0.3s ease;
+}
+
+.skill-card:hover {
+    transform: translateY(-5px);
+}
+
+.skill-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.skill-name {
+    font-size: 1.2rem;
+    color: var(--text-color);
+}
+
+.experience-badge {
+    background: var(--accent-color);
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 1rem;
+    font-size: 0.85rem;
+}
+
+.proficiency-bar {
+    height: 8px;
+    background: var(--card-bg);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 1rem;
+}
+
+.progress {
+    height: 100%;
+    background: linear-gradient(90deg, var(--gradient-start), var(--gradient-end));
+    border-radius: 4px;
+    position: relative;
+    transition: width 1s ease;
+}
+
+.proficiency-label {
+    position: absolute;
+    right: 0.5rem;
+    top: -1.5rem;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.skill-description {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+@media (max-width: 768px) {
+    .skills-list {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Animate progress bars on scroll
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.style.width = entry.target.getAttribute('data-width');
+            }
+        });
+    }, { threshold: 0.5 });
+
+    document.querySelectorAll('.progress').forEach(bar => {
+        bar.style.width = '0%';
+        bar.setAttribute('data-width', bar.style.width);
+        observer.observe(bar);
+    });
+});
+</script>
 {% endblock %}

@@ -1,4 +1,5 @@
 from flask import Flask, render_template, jsonify, request, flash, redirect, url_for, send_file
+from flask.ctx import AppContext  # New import to replace _app_ctx_stack
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -7,17 +8,70 @@ import json
 from werkzeug.utils import secure_filename
 import os
 import traceback  # Add at the top with other imports
+from flask_dance.contrib.github import make_github_blueprint, github
+from flask_dance.contrib.google import make_google_blueprint, google
+from flask_dance.consumer.storage.sqla import SQLAlchemyStorage
+from flask_dance.consumer import oauth_authorized
+from sqlalchemy.orm.exc import NoResultFound  # Add this import at the top
+from dotenv import load_dotenv
+from werkzeug.middleware.proxy_fix import ProxyFix
+
+load_dotenv()
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'your-secret-key'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///portfolio.db'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['UPLOAD_FOLDER'] = 'static/uploads'
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max-limit
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'pdf'}
+app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
+
+# Configure app first
+app.config.update({
+    'SECRET_KEY': os.environ.get('SECRET_KEY', 'default-secret-key'),
+    'SQLALCHEMY_DATABASE_URI': 'sqlite:///portfolio.db',
+    'SQLALCHEMY_TRACK_MODIFICATIONS': False,
+    'UPLOAD_FOLDER': 'static/uploads',
+    'MAX_CONTENT_LENGTH': 16 * 1024 * 1024,
+    'GITHUB_OAUTH_CLIENT_ID': os.environ.get('GITHUB_OAUTH_CLIENT_ID'),
+    'GITHUB_OAUTH_CLIENT_SECRET': os.environ.get('GITHUB_OAUTH_CLIENT_SECRET'),
+    'OAUTHLIB_INSECURE_TRANSPORT': True
+})
+
+# Initialize extensions
 db = SQLAlchemy(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
+
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'pdf'}
+
+# Define OAuth model first
+class OAuth(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    provider = db.Column(db.String(50), nullable=False)
+    provider_user_id = db.Column(db.String(256), unique=True, nullable=False)
+    token = db.Column(db.JSON, nullable=False)  # Changed to JSON type for better token storage
+    student_id = db.Column(db.Integer, db.ForeignKey('student.id'))
+    student = db.relationship('Student')
+
+    def __repr__(self):
+        return f'<OAuth {self.provider}:{self.provider_user_id}>'
+
+    def to_token(self):
+        return self.token
+
+# Initialize OAuth blueprints after OAuth model definition
+github_bp = make_github_blueprint(
+    client_id=os.environ.get('GITHUB_OAUTH_CLIENT_ID'),
+    client_secret=os.environ.get('GITHUB_OAUTH_CLIENT_SECRET'),
+    redirect_url='http://127.0.0.1:5000/login/github/authorized',
+    scope=['user:email']
+)
+google_bp = make_google_blueprint(
+    scope=['profile', 'email'],
+    storage=SQLAlchemyStorage(OAuth, db.session, user=current_user),
+    client_id=os.environ.get('GOOGLE_OAUTH_CLIENT_ID'),
+    client_secret=os.environ.get('GOOGLE_OAUTH_CLIENT_SECRET')
+)
+
+# Register blueprints after db initialization
+app.register_blueprint(github_bp, url_prefix='/login/github')
+app.register_blueprint(google_bp, url_prefix='/login/google')
 
 # Create upload folder if it doesn't exist
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
@@ -115,6 +169,65 @@ class SharedFile(db.Model):
     upload_date = db.Column(db.DateTime, default=datetime.utcnow)
     student_id = db.Column(db.Integer, db.ForeignKey('student.id'), nullable=False)
     downloads = db.Column(db.Integer, default=0)
+
+class Experience(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    position = db.Column(db.String(100), nullable=False)
+    company_name = db.Column(db.String(100), nullable=False)
+    company_logo = db.Column(db.String(200))
+    location = db.Column(db.String(100))
+    start_date = db.Column(db.DateTime, nullable=False)
+    end_date = db.Column(db.DateTime)
+    current = db.Column(db.Boolean, default=False)
+    description = db.Column(db.Text)
+    technologies = db.Column(db.String(200))
+    student_id = db.Column(db.Integer, db.ForeignKey('student.id'), nullable=False)
+
+    @property
+    def technologies_list(self):
+        return [tech.strip() for tech in self.technologies.split(',')] if self.technologies else []
+
+# Add relationship to Student model
+Student.experiences = db.relationship('Experience', backref='student', lazy=True)
+
+class BlogPost(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(200), nullable=False)
+    slug = db.Column(db.String(200), unique=True, nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    summary = db.Column(db.Text)
+    thumbnail = db.Column(db.String(200))
+    published_date = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_date = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    is_published = db.Column(db.Boolean, default=False)
+    views = db.Column(db.Integer, default=0)
+    tags = db.Column(db.String(200))
+    student_id = db.Column(db.Integer, db.ForeignKey('student.id'), nullable=False)
+
+    @property
+    def tags_list(self):
+        return [tag.strip() for tag in self.tags.split(',')] if self.tags else []
+
+    def generate_slug(self):
+        self.slug = '-'.join(self.title.lower().split())
+
+# Add relationship to Student model
+Student.blog_posts = db.relationship('BlogPost', backref='author', lazy=True)
+
+class Testimonial(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    position = db.Column(db.String(100))
+    company = db.Column(db.String(100))
+    content = db.Column(db.Text, nullable=False)
+    image_url = db.Column(db.String(200))
+    rating = db.Column(db.Integer)  # 1-5 rating
+    date_added = db.Column(db.DateTime, default=datetime.utcnow)
+    is_featured = db.Column(db.Boolean, default=False)
+    student_id = db.Column(db.Integer, db.ForeignKey('student.id'), nullable=False)
+
+# Add relationship to Student model
+Student.testimonials = db.relationship('Testimonial', backref='student', lazy=True)
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -283,12 +396,37 @@ def skills():
     if student is None:
         flash('No student record found.')
         return redirect(url_for('home'))
+        
+    # Define category icons mapping
+    category_icons = {
+        'Programming': 'fa-code',
+        'Web Development': 'fa-globe',
+        'Database': 'fa-database',
+        'DevOps': 'fa-server',
+        'Mobile Development': 'fa-mobile-alt',
+        'Data Science': 'fa-chart-bar',
+        'Machine Learning': 'fa-brain',
+        'Cloud Computing': 'fa-cloud',
+        'UI/UX Design': 'fa-paint-brush',
+        'Testing': 'fa-vial',
+        'Security': 'fa-shield-alt',
+        'Version Control': 'fa-code-branch',
+        'Framework': 'fa-layer-group',
+        'Tools': 'fa-tools',
+        'Soft Skills': 'fa-users',
+        'Languages': 'fa-language',
+        'Other': 'fa-star'
+    }
+    
     skills_by_category = {}
     for skill in student.skills:
         if skill.category not in skills_by_category:
             skills_by_category[skill.category] = []
         skills_by_category[skill.category].append(skill)
-    return render_template('skills.html', skills_by_category=skills_by_category)
+        
+    return render_template('skills.html', 
+                         skills_by_category=skills_by_category,
+                         category_icons=category_icons)
 
 @app.route('/add_skill', methods=['GET', 'POST'])
 @login_required
@@ -467,6 +605,20 @@ def init_db():
             db.session.add(project)
             db.session.commit()
             print("Initial content created!")
+        
+        # Add sample testimonial
+        testimonial = Testimonial(
+            name="John Smith",
+            position="Senior Developer",
+            company="Tech Corp",
+            content="Excellent work ethic and technical skills. A pleasure to work with!",
+            rating=5,
+            is_featured=True,
+            student=admin
+        )
+        db.session.add(testimonial)
+        db.session.commit()
+        
     except Exception as e:
         print(f"Database initialization error: {str(e)}")
         db.session.rollback()
@@ -614,8 +766,245 @@ def download_file(file_id):
         flash('Error downloading file', 'error')
         return redirect(url_for('shared_files'))
 
+@app.route('/login/github')
+def github_login():
+    if not github.authorized:
+        return redirect(url_for('github.login'))
+    return redirect(url_for('dashboard'))
+
+@oauth_authorized.connect_via(github_bp)
+def github_logged_in(blueprint, token):
+    if not token:
+        flash("Failed to log in with GitHub.", "error")
+        return False
+
+    try:
+        resp = github.get("/user")
+        if not resp.ok:
+            print(f"GitHub API Error: {resp.text}")  # Add debug logging
+            flash("Failed to fetch GitHub user info.", "error")
+            return False
+
+        github_info = resp.json()
+        github_user_id = str(github_info["id"])
+
+        # Get email from GitHub
+        emails_resp = github.get("/user/emails")
+        if emails_resp.ok:
+            emails = emails_resp.json()
+            primary_email = next((e["email"] for e in emails if e["primary"]), None)
+            email = primary_email or emails[0]["email"] if emails else None
+        else:
+            print(f"GitHub Email API Error: {emails_resp.text}")  # Add debug logging
+            email = None
+
+        # Find existing OAuth token
+        oauth = OAuth.query.filter_by(
+            provider='github',
+            provider_user_id=github_user_id
+        ).first()
+
+        if oauth:
+            # Update existing token
+            oauth.token = token
+            if oauth.student:
+                login_user(oauth.student)
+                db.session.commit()
+                flash("Successfully signed in with GitHub.", "success")
+                return False
+
+        # Create new OAuth and Student if not exists
+        student = Student(
+            username=github_info["login"],
+            email=email or f"{github_info['login']}@github.com",
+            name=github_info.get("name", github_info["login"]),
+            password_hash=generate_password_hash(os.urandom(24).hex()),
+            bio=github_info.get("bio", "")
+        )
+
+        oauth = OAuth(
+            provider='github',
+            provider_user_id=github_user_id,
+            token=token,
+            student=student
+        )
+
+        db.session.add_all([student, oauth])
+        db.session.commit()
+        login_user(student)
+        flash("Successfully signed in with GitHub.", "success")
+        return False
+
+    except Exception as e:
+        print(f"GitHub login error: {str(e)}")
+        print(traceback.format_exc())  # Add full traceback
+        db.session.rollback()
+        flash("An error occurred during GitHub login.", "error")
+        return False
+
+@oauth_authorized.connect_via(google_bp)
+def google_logged_in(blueprint, token):
+    if not token:
+        flash("Failed to log in with Google.", "error")
+        return False
+
+    resp = google.get("/oauth2/v2/userinfo")
+    if not resp.ok:
+        flash("Failed to fetch Google user info.", "error")
+        return False
+
+    google_info = resp.json()
+    google_user_id = google_info["id"]
+
+    oauth = OAuth.query.filter_by(
+        provider='google',
+        provider_user_id=google_user_id
+    ).first()
+
+    if oauth:
+        login_user(oauth.student)
+        flash("Successfully signed in with Google.", "success")
+        return False
+
+    email = google_info["email"]
+    username = email.split("@")[0]
+    name = google_info.get("name", username)
+
+    student = Student(
+        username=username,
+        email=email,
+        name=name,
+        password_hash=generate_password_hash(os.urandom(24).hex()),
+    )
+    oauth = OAuth(
+        provider='google',
+        provider_user_id=google_user_id,
+        student=student
+    )
+
+    db.session.add_all([student, oauth])
+    db.session.commit()
+    login_user(student)
+    flash("Successfully signed in with Google.", "success")
+    return False
+
+@app.route('/experience')
+def experience():
+    if current_user.is_authenticated:
+        experiences = current_user.experiences
+    else:
+        admin = Student.query.filter_by(username='admin').first()
+        experiences = admin.experiences if admin else []
+    
+    experiences = sorted(experiences, 
+                        key=lambda x: x.end_date or datetime.max, 
+                        reverse=True)
+    return render_template('experience.html', experiences=experiences)
+
+@app.route('/blog')
+def blog():
+    page = request.args.get('page', 1, type=int)
+    posts = BlogPost.query.filter_by(is_published=True)\
+        .order_by(BlogPost.published_date.desc())\
+        .paginate(page=page, per_page=6)
+    return render_template('blog/index.html', posts=posts)
+
+@app.route('/blog/new', methods=['GET', 'POST'])
+@login_required
+def new_post():
+    if request.method == 'POST':
+        post = BlogPost(
+            title=request.form.get('title'),
+            content=request.form.get('content'),
+            summary=request.form.get('summary'),
+            tags=request.form.get('tags'),
+            is_published=bool(request.form.get('publish')),
+            student_id=current_user.id
+        )
+        post.generate_slug()
+        
+        if 'thumbnail' in request.files:
+            file = request.files['thumbnail']
+            if file and allowed_file(file.filename):
+                filename = secure_filename(f'blog_{post.slug}_{file.filename}')
+                file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+                post.thumbnail = f'/static/uploads/{filename}'
+        
+        db.session.add(post)
+        db.session.commit()
+        flash('Blog post created successfully!', 'success')
+        return redirect(url_for('blog_post', slug=post.slug))
+        
+    return render_template('blog/new.html')
+
+@app.route('/blog/<slug>')
+def blog_post(slug):
+    post = BlogPost.query.filter_by(slug=slug).first_or_404()
+    post.views += 1
+    db.session.commit()
+    return render_template('blog/post.html', post=post)
+
+@app.route('/testimonials')
+def testimonials():
+    testimonials = Testimonial.query.filter_by(is_featured=True)\
+        .order_by(Testimonial.date_added.desc()).all()
+    return render_template('testimonials.html', testimonials=testimonials)
+
+@app.route('/testimonials/add', methods=['GET', 'POST'])
+@login_required
+def add_testimonial():
+    if request.method == 'POST':
+        testimonial = Testimonial(
+            name=request.form.get('name'),
+            position=request.form.get('position'),
+            company=request.form.get('company'),
+            content=request.form.get('content'),
+            rating=int(request.form.get('rating', 5)),
+            is_featured=bool(request.form.get('featured')),
+            student_id=current_user.id
+        )
+        
+        if 'image' in request.files:
+            file = request.files['image']
+            if file and allowed_file(file.filename):
+                filename = secure_filename(f'testimonial_{testimonial.id}_{file.filename}')
+                file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+                testimonial.image_url = f'/static/uploads/{filename}'
+        
+        db.session.add(testimonial)
+        db.session.commit()
+        flash('Testimonial added successfully!', 'success')
+        return redirect(url_for('testimonials'))
+        
+    return render_template('add_testimonial.html')
+
+@app.route('/testimonials/delete/<int:id>', methods=['POST'])
+@login_required
+def delete_testimonial(id):
+    testimonial = Testimonial.query.get_or_404(id)
+    if testimonial.student_id != current_user.id:
+        flash('Unauthorized access', 'error')
+        return redirect(url_for('testimonials'))
+    
+    try:
+        if testimonial.image_url:
+            # Delete image file if it exists
+            image_path = os.path.join(app.root_path, testimonial.image_url.lstrip('/'))
+            if os.path.exists(image_path):
+                os.remove(image_path)
+                
+        db.session.delete(testimonial)
+        db.session.commit()
+        flash('Testimonial deleted successfully!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash('Error deleting testimonial', 'error')
+    
+    return redirect(url_for('testimonials'))
+
 if __name__ == '__main__':
     with app.app_context():
+        db.create_all()  # Ensure all tables are created
         init_db()
         print("Database initialized successfully!")
         
@@ -625,4 +1014,11 @@ if __name__ == '__main__':
         else:
             print("Warning: Admin user not found!")
 
-    app.run(debug=True)
+    app.run(host='127.0.0.1', port=5000, debug=True)
+
+@app.route('/login/error')
+def oauth_error():
+    error = request.args.get('error')
+    return render_template('error.html',
+                         error_code='Auth Error',
+                         error_message=error or 'An authentication error occurred.')
