@@ -55,11 +55,12 @@ os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 @app.before_request
 def check_db_connection():
     try:
-        db.session.execute(text('SELECT 1'))
-        db.session.commit()
+        # Use raw SQL with proper text() wrapper
+        with db.engine.connect() as connection:
+            connection.execute(text("SELECT 1"))
+            connection.commit()
     except Exception as e:
         print(f"Database connection error: {str(e)}")
-        db.session.rollback()
         return "Database connection error. Please try again later.", 500
 
 # Initialize extensions
