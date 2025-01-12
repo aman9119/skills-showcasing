@@ -15,6 +15,7 @@ from flask_dance.consumer import oauth_authorized
 from sqlalchemy.orm.exc import NoResultFound  # Add this import at the top
 from dotenv import load_dotenv
 from werkzeug.middleware.proxy_fix import ProxyFix
+from sqlalchemy import text  # Add this import at the top
 
 load_dotenv()
 
@@ -54,10 +55,11 @@ os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 @app.before_request
 def check_db_connection():
     try:
-        db.session.execute('SELECT 1')
+        db.session.execute(text('SELECT 1'))
+        db.session.commit()
     except Exception as e:
         print(f"Database connection error: {str(e)}")
-        db.session.remove()
+        db.session.rollback()
         return "Database connection error. Please try again later.", 500
 
 # Initialize extensions
