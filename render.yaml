@@ -4,8 +4,14 @@ services:
     env: python
     buildCommand: pip install -r requirements.txt
     startCommand: |
-      python migrations.py
-      gunicorn wsgi:app --bind 0.0.0.0:$PORT --timeout 120
+      if [ -n "$DATABASE_URL" ]; then
+        echo "Using PostgreSQL database"
+        python migrations.py
+      else
+        echo "Using SQLite database"
+        python migrations.py
+      fi
+      gunicorn wsgi:app --bind 0.0.0.0:$PORT --timeout 120 --workers 4
     envVars:
       - key: PYTHON_VERSION
         value: 3.9.0
@@ -27,6 +33,8 @@ services:
         sync: false
       - key: SQLALCHEMY_TRACK_MODIFICATIONS
         value: "False"
+      - key: SQLALCHEMY_ENGINE_OPTIONS
+        value: '{"pool_size": 5, "max_overflow": 10, "pool_timeout": 30, "pool_pre_ping": true}'
 
 databases:
   - name: portfolio-db

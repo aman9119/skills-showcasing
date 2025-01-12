@@ -21,26 +21,26 @@ load_dotenv()
 app = Flask(__name__)
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
-# Update database URL configuration
+# Update database configuration
 database_url = os.environ.get('DATABASE_URL')
-if database_url:
-    # Handle Render.com's postgres:// URL format
+if database_url and 'postgres' in database_url:
+    # Use PostgreSQL in production (Render.com)
     if database_url.startswith('postgres://'):
         database_url = database_url.replace('postgres://', 'postgresql://', 1)
-    print(f"Using database URL: {database_url}")
+    print(f"Using PostgreSQL database: {database_url}")
 else:
+    # Use SQLite for local development
     database_url = 'sqlite:///portfolio.db'
-    print("Using SQLite database")
+    print("Using SQLite database for local development")
 
+# Update SQLAlchemy configuration
 app.config.update({
     'SECRET_KEY': os.environ.get('SECRET_KEY', 'default-secret-key'),
     'SQLALCHEMY_DATABASE_URI': database_url,
     'SQLALCHEMY_TRACK_MODIFICATIONS': False,
-    'UPLOAD_FOLDER': 'static/uploads',
-    'MAX_CONTENT_LENGTH': 16 * 1024 * 1024,
-    'GITHUB_OAUTH_CLIENT_ID': os.environ.get('GITHUB_OAUTH_CLIENT_ID'),
-    'GITHUB_OAUTH_CLIENT_SECRET': os.environ.get('GITHUB_OAUTH_CLIENT_SECRET'),
-    'OAUTHLIB_INSECURE_TRANSPORT': True
+    'SQLALCHEMY_ENGINE_OPTIONS': {
+        'pool_pre_ping': True,  # Enable automatic reconnection
+    } if 'postgresql' in database_url else {}  # Only use pool options for PostgreSQL
 })
 
 # Add database connection error handling
@@ -50,6 +50,7 @@ def check_db_connection():
         db.session.execute('SELECT 1')
     except Exception as e:
         print(f"Database connection error: {str(e)}")
+        db.session.remove()
         return "Database connection error. Please try again later.", 500
 
 # Initialize extensions
