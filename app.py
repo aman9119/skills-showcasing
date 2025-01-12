@@ -278,7 +278,11 @@ def signup():
             password = request.form.get('password')
             confirm_password = request.form.get('confirm_password')
 
+            # Add debug logging
+            print(f"Signup attempt - Username: {username}, Email: {email}")
+
             if not all([username, name, email, password, confirm_password]):
+                print("Missing required fields")
                 flash('All fields are required', 'error')
                 return redirect(url_for('signup'))
 
@@ -302,22 +306,30 @@ def signup():
                 flash('Email already registered', 'error')
                 return redirect(url_for('signup'))
 
+            # Create new user
             student = Student(
                 username=username,
                 name=name,
                 email=email,
                 password_hash=generate_password_hash(password),
-                bio='Student at Computer Science'  # Default bio
+                bio='Student at Computer Science'
             )
-            db.session.add(student)
-            db.session.commit()
-
-            flash('Registration successful! Please login.', 'success')
-            return redirect(url_for('login'))
+            
+            try:
+                db.session.add(student)
+                db.session.commit()
+                print(f"User created successfully: {username}")
+                flash('Registration successful! Please login.', 'success')
+                return redirect(url_for('login'))
+            except Exception as e:
+                db.session.rollback()
+                print(f"Database error: {str(e)}")
+                flash('Error creating user account', 'error')
+                
         except Exception as e:
+            print(f"Signup error: {str(e)}")
+            print(traceback.format_exc())
             flash('An error occurred during registration', 'error')
-            print(f"Error: {str(e)}")
-            db.session.rollback()
             
     return render_template('signup.html')
 
