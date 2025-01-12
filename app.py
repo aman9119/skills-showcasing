@@ -21,10 +21,15 @@ load_dotenv()
 app = Flask(__name__)
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
+# Update database URL to work with Render PostgreSQL
+database_url = os.environ.get('DATABASE_URL')
+if database_url and database_url.startswith('postgres://'):
+    database_url = database_url.replace('postgres://', 'postgresql://', 1)
+
 # Configure app first
 app.config.update({
     'SECRET_KEY': os.environ.get('SECRET_KEY', 'default-secret-key'),
-    'SQLALCHEMY_DATABASE_URI': 'sqlite:///portfolio.db',
+    'SQLALCHEMY_DATABASE_URI': database_url or 'sqlite:///portfolio.db',
     'SQLALCHEMY_TRACK_MODIFICATIONS': False,
     'UPLOAD_FOLDER': 'static/uploads',
     'MAX_CONTENT_LENGTH': 16 * 1024 * 1024,
@@ -1014,7 +1019,8 @@ if __name__ == '__main__':
         else:
             print("Warning: Admin user not found!")
 
-    app.run(host='127.0.0.1', port=5000, debug=True)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=True)
 
 @app.route('/login/error')
 def oauth_error():
