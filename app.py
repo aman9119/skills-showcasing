@@ -15,7 +15,7 @@ from flask_dance.consumer import oauth_authorized
 from sqlalchemy.orm.exc import NoResultFound  # Add this import at the top
 from dotenv import load_dotenv
 from werkzeug.middleware.proxy_fix import ProxyFix
-from sqlalchemy import text  # Add this import at the top
+from sqlalchemy import text, select  # Add this import at the top
 
 load_dotenv()
 
@@ -258,7 +258,8 @@ Student.testimonials = db.relationship('Testimonial', backref='student', lazy=Tr
 
 @login_manager.user_loader
 def load_user(user_id):
-    return Student.query.get(int(user_id))
+    stmt = select(Student).where(Student.id == int(user_id))
+    return db.session.execute(stmt).scalar_one_or_none()
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -268,7 +269,10 @@ def login():
             password = request.form.get('password')
             print(f"Login attempt - Username: {username}")
             
-            student = Student.query.filter_by(username=username).first()
+            # Use proper SQLAlchemy 2.0 syntax
+            stmt = select(Student).where(Student.username == username)
+            student = db.session.execute(stmt).scalar_one_or_none()
+            
             if student:
                 print(f"Found user: {student.username}")
                 if check_password_hash(student.password_hash, password):
@@ -320,11 +324,19 @@ def signup():
                 flash('Password must contain at least one number', 'error')
                 return redirect(url_for('signup'))
 
-            if Student.query.filter_by(username=username).first():
+            # Check if username exists using proper SQLAlchemy 2.0 syntax
+            stmt = select(Student).where(Student.username == username)
+            existing_user = db.session.execute(stmt).scalar_one_or_none()
+            
+            if existing_user:
                 flash('Username already exists', 'error')
                 return redirect(url_for('signup'))
 
-            if Student.query.filter_by(email=email).first():
+            # Check if email exists
+            stmt = select(Student).where(Student.email == email)
+            existing_email = db.session.execute(stmt).scalar_one_or_none()
+            
+            if existing_email:
                 flash('Email already registered', 'error')
                 return redirect(url_for('signup'))
 
