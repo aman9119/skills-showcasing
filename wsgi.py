@@ -1,8 +1,8 @@
-from app import app, db
+from app import app
+from migrations import init_database
 
-# Ensure all tables exist
-with app.app_context():
-    db.create_all()
+# Initialize the database
+init_database()
 
 if __name__ == '__main__':
     app.run()

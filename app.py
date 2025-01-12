@@ -21,15 +21,20 @@ load_dotenv()
 app = Flask(__name__)
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
-# Update database URL to work with Render PostgreSQL
+# Update database URL configuration
 database_url = os.environ.get('DATABASE_URL')
-if database_url and database_url.startswith('postgres://'):
-    database_url = database_url.replace('postgres://', 'postgresql://', 1)
+if database_url:
+    # Handle Render.com's postgres:// URL format
+    if database_url.startswith('postgres://'):
+        database_url = database_url.replace('postgres://', 'postgresql://', 1)
+    print(f"Using database URL: {database_url}")
+else:
+    database_url = 'sqlite:///portfolio.db'
+    print("Using SQLite database")
 
-# Configure app first
 app.config.update({
     'SECRET_KEY': os.environ.get('SECRET_KEY', 'default-secret-key'),
-    'SQLALCHEMY_DATABASE_URI': database_url or 'sqlite:///portfolio.db',
+    'SQLALCHEMY_DATABASE_URI': database_url,
     'SQLALCHEMY_TRACK_MODIFICATIONS': False,
     'UPLOAD_FOLDER': 'static/uploads',
     'MAX_CONTENT_LENGTH': 16 * 1024 * 1024,
@@ -37,6 +42,15 @@ app.config.update({
     'GITHUB_OAUTH_CLIENT_SECRET': os.environ.get('GITHUB_OAUTH_CLIENT_SECRET'),
     'OAUTHLIB_INSECURE_TRANSPORT': True
 })
+
+# Add database connection error handling
+@app.before_request
+def check_db_connection():
+    try:
+        db.session.execute('SELECT 1')
+    except Exception as e:
+        print(f"Database connection error: {str(e)}")
+        return "Database connection error. Please try again later.", 500
 
 # Initialize extensions
 db = SQLAlchemy(app)
@@ -316,15 +330,20 @@ def signup():
             )
             
             try:
+                print("Attempting to add new user to database...")
                 db.session.add(student)
                 db.session.commit()
                 print(f"User created successfully: {username}")
                 flash('Registration successful! Please login.', 'success')
                 return redirect(url_for('login'))
-            except Exception as e:
+            except Exception as db_error:
                 db.session.rollback()
-                print(f"Database error: {str(e)}")
-                flash('Error creating user account', 'error')
+                print(f"Database error during signup: {str(db_error)}")
+                if 'UniqueViolation' in str(db_error):
+                    flash('Username or email already exists', 'error')
+                else:
+                    flash('Error creating account. Please try again.', 'error')
+                return redirect(url_for('signup'))
                 
         except Exception as e:
             print(f"Signup error: {str(e)}")
