@@ -573,7 +573,7 @@ def edit_project(id):
                     filename = secure_filename(file.filename)
                     file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
                     project.image_url = f'/static/uploads/{filename}'
-            
+
             db.session.commit()
             flash('Project updated successfully!', 'success')
             return redirect(url_for('projects'))
@@ -1075,4 +1075,4 @@ def init_app(app):
 if __name__ == '__main__':
     init_app(app)
     port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port)
+    app.run(host='0.0.0.0', port=port, debug=False, use_reloader=False)
