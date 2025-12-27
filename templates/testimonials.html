@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+
+{% block content %}
+  <div class="container">
+    <h1>Testimonials</h1>
+    <div class="testimonials-list">
+      {% for t in testimonials %}
+        <div class="testimonial">
+          <h3>{{ t.name }} {% if t.position %}- <small>{{ t.position }}</small>{% endif %}</h3>
+          <p>{{ t.content }}</p>
+          <p><small>{{ t.company }}</small></p>
+        </div>
+      {% else %}
+        <p>No testimonials available.</p>
+      {% endfor %}
+    </div>
+  </div>
+{% endblock %}

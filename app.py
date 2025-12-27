@@ -1002,8 +1002,7 @@ def blog_post(slug):
 
 @app.route('/testimonials')
 def testimonials():
-    testimonials = Testimonial.query.filter_by(is_featured=True)\
-        .order_by(Testimonial.date_added.desc()).all()
+    testimonials = Testimonial.query.filter_by(is_featured=True).order_by(Testimonial.date_added.desc()).all()
     return render_template('testimonials.html', testimonials=testimonials)
 
 @app.route('/testimonials/add', methods=['GET', 'POST'])
@@ -1065,7 +1064,6 @@ def oauth_error():
                          error_code='Auth Error',
                          error_message=error or 'An authentication error occurred.')
 
-# Add this after all models are defined but before routes
 def init_app(app):
     with app.app_context():
         db.create_all()
@@ -1075,4 +1073,8 @@ def init_app(app):
 if __name__ == '__main__':
     init_app(app)
     port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port, debug=False, use_reloader=False)
+    # Enable debug mode when FLASK_DEBUG=1; enable reloader when DEBUG and USE_RELOADER!=0
+    debug_mode = os.environ.get('FLASK_DEBUG', '0') == '1'
+    use_reloader = debug_mode and os.environ.get('USE_RELOADER', '1') != '0'
+    app.debug = debug_mode
+    app.run(host='0.0.0.0', port=port, debug=debug_mode, use_reloader=use_reloader)
