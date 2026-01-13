@@ -1,0 +1,105 @@
+/* Clean overrides to enforce a minimalist, clean UI
+   Loaded after inline styles to take effect without heavy removals.
+*/
+:root { --nav-height: 70px; }
+
+/* Neutralize heavy gradients and shadows for a cleaner appearance */
+body { background: var(--background) !important; color: var(--text) !important; }
+
+/* Navigation: flat, subtle shadow only */
+.glass-nav { background: rgba(255,255,255,0.02) !important; border-bottom: 1px solid var(--border) !important; backdrop-filter: none !important; }
+.nav-container { padding: 0 1rem !important; }
+.brand-name { font-size: 1.4rem !important; text-shadow: none !important; }
+.brand-dot { display: none !important; }
+
+/* Limit decorative elements on links */
+.nav-link { background: transparent !important; box-shadow: none !important; }
+.nav-link:hover { transform: none !important; background: rgba(0,0,0,0.02) !important; }
+
+/* Simplify cards & welcome banner */
+.card { box-shadow: 0 6px 18px rgba(2,6,23,0.06) !important; border-radius: 12px !important; }
+.welcome-banner { background: transparent !important; border: 1px solid var(--border) !important; }
+
+/* Buttons - crisp and simple */
+.btn { border-radius: 10px !important; box-shadow: none !important; }
+.btn-outline { border-radius: 10px !important; }
+
+/* Make spacing consistent */
+.container { padding: 1.5rem !important; }
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .brand-name { font-size: 1.1rem !important; }
+}
+
+/* Responsive typography and layout fixes to prevent overlapping on mobile */
+.brand-name {
+  font-size: clamp(1.2rem, 6vw, 2.2rem) !important;
+  line-height: 1 !important;
+  text-shadow: none !important;
+}
+
+/* Ensure long text wraps and doesn't overflow */
+body, .container, .card, .auth-container { word-break: break-word; overflow-wrap: break-word; }
+
+/* Headings should scale and maintain line-height */
+h1, h2, h3 { line-height: 1.15; margin: 0 0 .5rem; }
+h1 { font-size: clamp(1.25rem, 5vw, 2rem); }
+h2 { font-size: clamp(1.05rem, 4vw, 1.4rem); }
+
+/* Profile header responsive behavior */
+.profile-header { display:flex; align-items:center; gap:1rem; }
+.profile-header img { width:96px; height:96px; object-fit:cover; border-radius:8px; }
+
+@media (max-width: 600px) {
+  .profile-header { flex-direction:column; align-items:flex-start; gap:.5rem; }
+  .profile-header img { width:72px; height:72px; }
+  .profile-header h1 { font-size: 1.25rem; }
+  .nav-container { padding: 0 .75rem !important; }
+  .nav-links { gap: .6rem !important; }
+}
+
+/* Reduce navbar height on very small screens */
+@media (max-width: 420px) {
+  :root { --nav-height: 60px; }
+  .glass-nav, nav { height: var(--nav-height) !important; }
+}
+
+/* Map legacy variable names to new ones to avoid unexpected colors */
+:root {
+  --background-color: var(--background);
+  --card-radius: var(--radius);
+  --card-shadow: 0 8px 20px var(--shadow);
+  --primary-color: var(--primary);
+  --accent-color: var(--accent);
+  --text-color: var(--text);
+  --border-color: var(--border);
+}
+
+/* Remove large decorative gradients that can appear as colored bars */
+nav, .glass-nav, .hero, .welcome-banner, .brand-name, .brand-dot, header, .divider, .welcome-inner {
+  background-image: none !important;
+  background: transparent !important;
+  border: none !important;
+}
+
+/* Ensure the nav uses the page background and doesn't cast a colored bar */
+nav, .glass-nav { background: var(--background) !important; background-image: none !important; box-shadow: none !important; }
+
+/* Make signup area explicitly neutral and on top */
+.auth-wrapper { background: var(--background) !important; background-image: none !important; position: relative; z-index: 2; }
+.auth-container { position: relative; z-index: 3; }
+
+/* If any element uses a linear or radial gradient via inline or template styles, neutralize it */
+*[style*="linear-gradient"], *[style*="radial-gradient"], *[style*="background-image"] {
+  background-image: none !important;
+  background: transparent !important;
+}
+
+/* Make sure there are no full-width colored accent bars */
+.section-accent, .accent-strip { background: transparent !important; }
+
+/* Hide any remaining brand dots or overly decorative accents */
+.brand-dot, .accent-dot { display: none !important; }
+
+

@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="auth-wrapper">
-    <div class="auth-container">
+    <div class="auth-container card">
         <header class="auth-header">
             <h2 class="gradient-heading">Create Account</h2>
             <p class="auth-subtitle">Join our community of developers</p>
@@ -19,11 +19,11 @@
 
         <div class="social-signup">
             <div class="social-buttons">
-                <a href="{{ url_for('github_login') }}" class="social-btn github">
+                <a href="{{ url_for('github_login') }}" class="btn btn-outline social-btn github" aria-label="Sign up with GitHub">
                     <i class="fab fa-github"></i>
                     <span>Continue with GitHub</span>
                 </a>
-                <a href="{{ url_for('google.login') }}" class="social-btn google">
+                <a href="{{ url_for('google.login') }}" class="btn btn-outline social-btn google" aria-label="Sign up with Google">
                     <i class="fab fa-google"></i>
                     <span>Continue with Google</span>
                 </a>
@@ -74,6 +74,7 @@
                     <div class="strength-bar"></div>
                     <span class="strength-text"></span>
                 </div>
+                <p class="muted small" style="margin-top:.4rem">Use at least 8 characters, including an uppercase letter and a number.</p>
             </div>
 
             <div class="form-group">
@@ -85,7 +86,7 @@
                 </div>
             </div>
 
-            <button type="submit" class="btn-submit">Create Account</button>
+            <button type="submit" class="btn" id="create-account-btn" disabled>Create Account</button>
         </form>
 
         <p class="auth-link">Already have an account? <a href="{{ url_for('login') }}">Sign in</a></p>
@@ -93,53 +94,55 @@
 </div>
 
 <style>
-.auth-wrapper {
-    min-height: calc(100vh - var(--nav-height));
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 2rem;
-    background: linear-gradient(135deg, 
-        var(--gradient-start) 0%, 
-        var(--gradient-end) 100%);
+/* Polished sign-up styles (minimal, aligned with theme) */
+.auth-wrapper{
+    min-height:calc(100vh - var(--nav-height));
+    display:flex;align-items:center;justify-content:center;padding:2rem;background:var(--background);
 }
+.auth-container{width:100%;max-width:520px;padding:1.75rem;border-radius:var(--radius);border:1px solid var(--border);box-shadow:0 8px 20px var(--shadow);}
+.auth-header{text-align:center;margin-bottom:1rem}
+.gradient-heading{font-size:1.6rem;margin:0;color:var(--text)}
+.auth-subtitle{color:var(--muted);margin-top:.4rem;font-size:.95rem}
 
-.auth-container {
-    width: 100%;
-    max-width: 480px;
-    background: var(--card-bg);
-    padding: 2.5rem;
-    border-radius: var(--card-radius);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-}
+.social-buttons{display:flex;flex-direction:column;gap:.6rem;margin:1rem 0}
+.social-btn{display:flex;align-items:center;gap:.75rem;justify-content:center;padding:.6rem;border-radius:10px}
+.social-btn.github{border:1px solid rgba(0,0,0,0.06)}
+.social-btn.google{border:1px solid rgba(0,0,0,0.06)}
 
-/* Add more styles... */
+.divider{display:flex;align-items:center;gap:.75rem;color:var(--muted);font-size:.95rem}
+.divider span{display:inline-block;padding:.2rem .6rem;border-radius:999px;background:transparent}
+
+.form-group{margin-bottom:1rem}
+.input-group{display:flex;align-items:center;gap:.5rem;border:1px solid var(--border);padding:.2rem .6rem;border-radius:8px;background:var(--surface)}
+.input-group input{border:none;outline:none;padding:.6rem .5rem;width:100%;background:transparent;color:var(--text)}
+.input-icon{color:var(--muted);padding:.3rem}
+.validation-status{width:26px;height:26px;display:inline-block}
+
+.password-strength{height:8px;background:rgba(0,0,0,0.04);border-radius:999px;margin-top:.5rem;overflow:hidden}
+.password-strength .strength-bar{height:100%;width:0;background:linear-gradient(90deg,var(--gradient-start),var(--gradient-end));transition:width .18s}
+.password-strength .strength-text{display:block;margin-top:.35rem;color:var(--muted);font-size:.85rem}
+
+.auth-link{text-align:center;margin-top:1rem;color:var(--muted)}
+.auth-link a{color:var(--primary);font-weight:600}
+
+/* Small helpers */
+.muted{color:var(--muted)}
+.small{font-size:.85rem}
+
+@media (max-width:520px){.auth-container{padding:1rem}}
 </style>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const form = document.querySelector('.signup-form');
+    const username = document.getElementById('username');
+    const name = document.getElementById('name');
+    const email = document.getElementById('email');
     const password = document.getElementById('password');
     const confirmPassword = document.getElementById('confirm_password');
     const strengthBar = document.querySelector('.strength-bar');
     const strengthText = document.querySelector('.strength-text');
-
-    // Password strength checker
-    password.addEventListener('input', function() {
-        const strength = checkPasswordStrength(this.value);
-        updateStrengthIndicator(strength);
-    });
-
-    // Validate matching passwords
-    confirmPassword.addEventListener('input', function() {
-        if (this.value === password.value) {
-            this.parentElement.classList.remove('error');
-            this.parentElement.classList.add('valid');
-        } else {
-            this.parentElement.classList.remove('valid');
-            this.parentElement.classList.add('error');
-        }
-    });
+    const submitBtn = document.getElementById('create-account-btn');
 
     function checkPasswordStrength(password) {
         let strength = 0;
@@ -153,7 +156,6 @@ document.addEventListener('DOMContentLoaded', function() {
     function updateStrengthIndicator(strength) {
         const percent = (strength / 4) * 100;
         strengthBar.style.width = `${percent}%`;
-        
         switch(strength) {
             case 0: strengthText.textContent = 'Weak'; break;
             case 1: strengthText.textContent = 'Fair'; break;
@@ -162,6 +164,40 @@ document.addEventListener('DOMContentLoaded', function() {
             case 4: strengthText.textContent = 'Very Strong'; break;
         }
     }
+
+    function updateFormState() {
+        const pwdStrength = checkPasswordStrength(password.value);
+        const passwordsMatch = password.value && (password.value === confirmPassword.value);
+        const requiredFilled = username.value.trim().length >= 3 && name.value.trim().length > 0 && email.checkValidity();
+        // Enable submit only if required fields are good, passwords match and strength >= 2
+        if (requiredFilled && passwordsMatch && pwdStrength >= 2) {
+            submitBtn.disabled = false;
+        } else {
+            submitBtn.disabled = true;
+        }
+    }
+
+    // Wire up events
+    [username, name, email, password, confirmPassword].forEach(el => {
+        el.addEventListener('input', updateFormState);
+    });
+
+    password.addEventListener('input', function() {
+        const strength = checkPasswordStrength(this.value);
+        updateStrengthIndicator(strength);
+        updateFormState();
+    });
+
+    confirmPassword.addEventListener('input', function() {
+        if (this.value === password.value) {
+            this.parentElement.classList.remove('error');
+            this.parentElement.classList.add('valid');
+        } else {
+            this.parentElement.classList.remove('valid');
+            this.parentElement.classList.add('error');
+        }
+        updateFormState();
+    });
 });
 
 function togglePassword(inputId) {

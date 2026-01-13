@@ -1,5 +1,5 @@
 from flask import Flask, render_template, jsonify, request, flash, redirect, url_for, send_file
-from flask.ctx import AppContext  # New import to replace _app_ctx_stack
+from flask.ctx import AppContext  
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -7,15 +7,15 @@ from datetime import datetime
 import json
 from werkzeug.utils import secure_filename
 import os
-import traceback  # Add at the top with other imports
+import traceback  
 from flask_dance.contrib.github import make_github_blueprint, github
 from flask_dance.contrib.google import make_google_blueprint, google
 from flask_dance.consumer.storage.sqla import SQLAlchemyStorage
 from flask_dance.consumer import oauth_authorized
-from sqlalchemy.orm.exc import NoResultFound  # Add this import at the top
+from sqlalchemy.orm.exc import NoResultFound  
 from dotenv import load_dotenv
 from werkzeug.middleware.proxy_fix import ProxyFix
-from sqlalchemy import text, select  # Add this import at the top
+from sqlalchemy import text, select  
 
 load_dotenv()
 
@@ -442,9 +442,15 @@ def upload_resume():
 
 @app.route('/')
 def home():
-    if not current_user.is_authenticated:
-        return redirect(url_for('signup'))  # Changed to redirect to signup first
-    return render_template('home.html', student=current_user)
+    # Show the public home page. If the user is authenticated show their profile,
+    # otherwise show the 'admin' user (or the first student) as the public profile.
+    if current_user.is_authenticated:
+        student = current_user
+    else:
+        student = Student.query.filter_by(username='admin').first() or Student.query.first()
+
+    featured_projects = sorted([p for p in (student.projects if student else []) if p.featured], key=lambda x: x.completion_date, reverse=True)
+    return render_template('home.html', student=student, featured_projects=featured_projects)
 
 @app.route('/skills')
 def skills():
